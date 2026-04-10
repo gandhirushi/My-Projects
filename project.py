@@ -56,44 +56,40 @@ def train_model():
 model = train_model()
 
 # -----------------------------
-# Model Performance
+# SIDEBAR (INPUTS + MODEL PERFORMANCE)
 # -----------------------------
-st.header("📊 Model Performance")
+st.sidebar.header("🔍 Select Preferences")
 
-y_pred = model.predict(X_test)
-
-st.write("R² Score:", round(r2_score(y_test, y_pred), 3))
-st.write("MAE:", round(mean_absolute_error(y_test, y_pred), 3))
-
-st.divider()
-
-# -----------------------------
-# USER INPUT
-# -----------------------------
-st.header("🔍 Select Preferences")
-
-# City selection
+# Inputs
 city_list = sorted(model_df['city'].unique())
-selected_city = st.selectbox("Select City", city_list)
+selected_city = st.sidebar.selectbox("City", city_list)
 
-# Cuisine processing
 cuisine_df = model_df.copy()
 cuisine_df['cuisines'] = cuisine_df['cuisines'].str.split(',')
 cuisine_df = cuisine_df.explode('cuisines')
 cuisine_df['cuisines'] = cuisine_df['cuisines'].str.strip()
 
 cuisine_list = sorted(cuisine_df['cuisines'].unique())
-selected_cuisine = st.selectbox("Select Cuisine", cuisine_list)
+selected_cuisine = st.sidebar.selectbox("Cuisine", cuisine_list)
 
-# Manual inputs
-cost = st.slider("Average Cost for Two (₹)", 100, 5000, 1000)
-votes = st.slider("Votes", 0, 5000, 500)
-price_range = st.selectbox("Price Range", [1, 2, 3, 4])
+cost = st.sidebar.slider("Cost for Two (₹)", 100, 5000, 1000)
+votes = st.sidebar.slider("Votes", 0, 5000, 500)
+price_range = st.sidebar.selectbox("Price Range", [1, 2, 3, 4])
 
-st.divider()
+predict_btn = st.sidebar.button("🔮 Predict")
+
+st.sidebar.markdown("---")
+
+# ✅ MODEL PERFORMANCE IN SIDEBAR
+st.sidebar.header("📊 Model Performance")
+
+y_pred = model.predict(X_test)
+
+st.sidebar.write("R² Score:", round(r2_score(y_test, y_pred), 3))
+st.sidebar.write("MAE:", round(mean_absolute_error(y_test, y_pred), 3))
 
 # -----------------------------
-# FILTER DATA FIRST
+# FILTER DATA
 # -----------------------------
 filtered_data = cuisine_df[
     (cuisine_df['city'] == selected_city) &
@@ -101,17 +97,14 @@ filtered_data = cuisine_df[
 ]
 
 # -----------------------------
-# CHECK AVAILABILITY
+# OUTPUT (MAIN SCREEN)
 # -----------------------------
-if len(filtered_data) == 0:
-    st.error("❌ No service available for selected city and cuisine")
+if predict_btn:
 
-else:
-    # -----------------------------
-    # PREDICTION
-    # -----------------------------
-    if st.button("🔮 Predict Rating"):
+    if len(filtered_data) == 0:
+        st.error("❌ No service available for selected city and cuisine")
 
+    else:
         input_data = np.array([[cost, votes, price_range]])
         prediction = model.predict(input_data)[0]
 
@@ -126,18 +119,17 @@ else:
 
         st.divider()
 
-        # -----------------------------
-        # SMART MATCHING
-        # -----------------------------
         filtered_data = filtered_data.copy()
         filtered_data['difference'] = abs(filtered_data['rating'] - prediction)
 
         closest_matches = filtered_data.sort_values(by='difference').head(5)
 
         st.write("### 🎯 Best Matching Restaurants")
-        st.table(closest_matches[['restaurant_name', 'rating', 'average_cost_for_two']])
+        st.dataframe(closest_matches[['restaurant_name', 'rating', 'average_cost_for_two']])
 
 # -----------------------------
 # Footer
 # -----------------------------
+st.markdown("---")
 st.markdown("👨‍💻 Internship Project | FoodConnect")
+
